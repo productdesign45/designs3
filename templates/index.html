@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Goleador SMS · Plataforma de Mensajería</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+  <style>
+    /* ================================================================
+       CSS RESET & VARIABLES
+       ================================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #F1F5F9;
+      --sidebar-bg: #0F172A;
+      --sidebar-w: 260px;
+      --card: #FFFFFF;
+      --card-border: #E2E8F0;
+      --text: #1E293B;
+      --text-secondary: #64748B;
+      --text-light: #94A3B8;
+      --primary: #2563EB;
+      --primary-light: #3B82F6;
+      --primary-bg: #EFF6FF;
+      --success: #10B981;
+      --success-bg: #ECFDF5;
+      --warning: #F59E0B;
+      --warning-bg: #FFFBEB;
+      --danger: #EF4444;
+      --danger-bg: #FEF2F2;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+      --shadow-md: 0 4px 6px rgba(0,0,0,.05), 0 2px 4px rgba(0,0,0,.03);
+      --shadow-lg: 0 10px 25px rgba(0,0,0,.08);
+      --transition: .2s ease;
+    }
+    html { font-size: 14px; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    button { font-family: inherit; cursor: pointer; }
+    input, textarea, select { font-family: inherit; }
+
+    /* ================================================================
+       SIDEBAR
+       ================================================================ */
+    .sidebar {
+      width: var(--sidebar-w);
+      min-height: 100vh;
+      background: var(--sidebar-bg);
+      color: #CBD5E1;
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 100;
+      transition: transform var(--transition);
+    }
+    .sidebar-brand {
+      padding: 24px 20px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .sidebar-brand .logo {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, var(--primary), #7C3AED);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; color: #fff; font-weight: 800;
+    }
+    .sidebar-brand h2 {
+      font-size: 1.15rem; font-weight: 700; color: #F8FAFC;
+      line-height: 1.2;
+    }
+    .sidebar-brand span { font-size: .75rem; color: #64748B; font-weight: 500; }
+    .sidebar-nav { flex: 1; padding: 16px 12px; display: flex; flex-direction: column; gap: 2px; }
+    .nav-label {
+      font-size: .65rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .08em; color: #475569; padding: 16px 12px 6px;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 14px; border-radius: var(--radius-sm);
+      font-size: .9rem; font-weight: 500;
+      color: #94A3B8; text-decoration: none;
+      cursor: pointer; transition: all var(--transition);
+      border: none; background: none; width: 100%; text-align: left;
+    }
+    .nav-item:hover { background: rgba(255,255,255,.06); color: #E2E8F0; }
+    .nav-item.active { background: rgba(37,99,235,.2); color: #60A5FA; }
+    .nav-item .material-icons-round { font-size: 20px; }
+    .sidebar-footer {
+      padding: 16px 20px; border-top: 1px solid rgba(255,255,255,.08);
+      font-size: .75rem; color: #475569;
+    }
+
+    /* ================================================================
+       MAIN CONTENT
+       ================================================================ */
+    .main {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+    }
+    .topbar {
+      background: var(--card);
+      border-bottom: 1px solid var(--card-border);
+      padding: 16px 32px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .topbar h1 { font-size: 1.25rem; font-weight: 700; }
+    .topbar-right { display: flex; align-items: center; gap: 16px; }
+    .semaphore {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--bg); padding: 6px 14px; border-radius: 20px;
+      font-size: .8rem; font-weight: 600;
+    }
+    .semaphore-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--success); transition: background var(--transition);
+    }
+    .semaphore-dot.yellow { background: var(--warning); }
+    .semaphore-dot.red { background: var(--danger); }
+    .semaphore-label { color: var(--text-secondary); }
+
+    .content { padding: 28px 32px; flex: 1; }
+
+    /* ================================================================
+       VIEWS
+       ================================================================ */
+    .view { display: none; animation: fadeIn .25s ease; }
+    .view.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+    /* ================================================================
+       CARDS
+       ================================================================ */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .card-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--card-border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .card-header h3 { font-size: 1rem; font-weight: 600; }
+    .card-body { padding: 24px; }
+
+    /* ================================================================
+       DASHBOARD STATS
+       ================================================================ */
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px; margin-bottom: 28px;
+    }
+    .stat-card {
+      background: var(--card); border: 1px solid var(--card-border);
+      border-radius: var(--radius); padding: 22px 24px;
+      box-shadow: var(--shadow); display: flex; align-items: flex-start; gap: 16px;
+    }
+    .stat-icon {
+      width: 48px; height: 48px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px;
+    }
+    .stat-icon.blue { background: var(--primary-bg); color: var(--primary); }
+    .stat-icon.green { background: var(--success-bg); color: var(--success); }
+    .stat-icon.orange { background: var(--warning-bg); color: var(--warning); }
+    .stat-icon.red { background: var(--danger-bg); color: var(--danger); }
+    .stat-info h4 { font-size: .8rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 4px; }
+    .stat-info .stat-value { font-size: 1.75rem; font-weight: 800; line-height: 1; }
+
+    /* ================================================================
+       FORMS
+       ================================================================ */
+    .form-group { margin-bottom: 20px; }
+    .form-group label {
+      display: block; font-size: .85rem; font-weight: 600;
+      color: var(--text); margin-bottom: 6px;
+    }
+    .form-group .hint { font-size: .75rem; color: var(--text-light); margin-top: 4px; }
+    .form-control {
+      width: 100%; padding: 10px 14px;
+      border: 1.5px solid #D1D5DB; border-radius: var(--radius-sm);
+      font-size: .9rem; color: var(--text);
+      background: #fff; transition: border-color var(--transition), box-shadow var(--transition);
+      outline: none;
+    }
+    .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
+    textarea.form-control { resize: vertical; min-height: 100px; line-height: 1.5; }
+    select.form-control { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748B' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
+
+    /* ================================================================
+       BUTTONS
+       ================================================================ */
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 20px; border-radius: var(--radius-sm);
+      font-size: .9rem; font-weight: 600; border: none;
+      transition: all var(--transition); cursor: pointer;
+    }
+    .btn .material-icons-round { font-size: 18px; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: #1D4ED8; box-shadow: var(--shadow-md); }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-success:hover { background: #059669; }
+    .btn-outline {
+      background: transparent; color: var(--primary);
+      border: 1.5px solid var(--primary);
+    }
+    .btn-outline:hover { background: var(--primary-bg); }
+    .btn-sm { padding: 7px 14px; font-size: .8rem; }
+
+    /* ================================================================
+       TAGS
+       ================================================================ */
+    .tags-bar {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px;
+    }
+    .tag {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 10px; border-radius: 6px;
+      font-size: .78rem; font-weight: 600; cursor: pointer;
+      background: var(--primary-bg); color: var(--primary);
+      border: 1px solid rgba(37,99,235,.2);
+      transition: all var(--transition);
+    }
+    .tag:hover { background: var(--primary); color: #fff; }
+
+    /* ================================================================
+       CHARACTER COUNTER
+       ================================================================ */
+    .char-counter {
+      display: flex; align-items: center; gap: 16px;
+      padding: 10px 16px; background: var(--bg); border-radius: var(--radius-sm);
+      margin-top: 8px; font-size: .8rem;
+    }
+    .char-counter .counter-item { display: flex; align-items: center; gap: 6px; }
+    .counter-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 28px; height: 22px; padding: 0 6px;
+      border-radius: 6px; font-weight: 700; font-size: .75rem;
+    }
+    .counter-badge.blue { background: var(--primary-bg); color: var(--primary); }
+    .counter-badge.orange { background: var(--warning-bg); color: var(--warning); }
+    .counter-badge.green { background: var(--success-bg); color: var(--success); }
+
+    /* ================================================================
+       FILE UPLOAD ZONE
+       ================================================================ */
+    .upload-zone {
+      border: 2px dashed #CBD5E1;
+      border-radius: var(--radius);
+      padding: 40px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--transition);
+      background: #FAFBFC;
+    }
+    .upload-zone:hover, .upload-zone.dragover {
+      border-color: var(--primary); background: var(--primary-bg);
+    }
+    .upload-zone .material-icons-round { font-size: 48px; color: var(--primary); margin-bottom: 12px; }
+    .upload-zone h4 { font-size: 1rem; font-weight: 600; margin-bottom: 4px; }
+    .upload-zone p { font-size: .8rem; color: var(--text-secondary); }
+    .upload-zone input[type="file"] { display: none; }
+
+    .file-info {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 18px; background: var(--success-bg);
+      border: 1px solid rgba(16,185,129,.2);
+      border-radius: var(--radius-sm); margin-top: 12px;
+    }
+    .file-info .material-icons-round { color: var(--success); }
+    .file-info span { font-weight: 600; font-size: .85rem; }
+    .file-info .file-remove {
+      margin-left: auto; background: none; border: none;
+      color: var(--danger); cursor: pointer; font-size: .8rem; font-weight: 600;
+    }
+
+    /* ================================================================
+       DATA TABLE PREVIEW
+       ================================================================ */
+    .table-wrap { overflow-x: auto; margin-top: 16px; border-radius: var(--radius-sm); border: 1px solid var(--card-border); }
+    .table-wrap table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+    .table-wrap th {
+      background: var(--bg); padding: 10px 14px;
+      text-align: left; font-weight: 600; color: var(--text-secondary);
+      border-bottom: 1px solid var(--card-border); white-space: nowrap;
+    }
+    .table-wrap td {
+      padding: 9px 14px; border-bottom: 1px solid #F1F5F9;
+      color: var(--text); white-space: nowrap;
+    }
+    .table-wrap tr:last-child td { border-bottom: none; }
+
+    /* ================================================================
+       PROGRESS
+       ================================================================ */
+    .progress-section { margin-top: 24px; }
+    .progress-bar-track {
+      width: 100%; height: 12px; background: #E2E8F0;
+      border-radius: 6px; overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%; background: linear-gradient(90deg, var(--primary), #7C3AED);
+      border-radius: 6px; transition: width .4s ease; width: 0%;
+    }
+    .progress-stats {
+      display: flex; gap: 24px; margin-top: 12px; font-size: .85rem;
+    }
+    .progress-stats .ps-item { display: flex; align-items: center; gap: 6px; }
+    .dot-green { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+    .dot-red { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); }
+
+    /* ================================================================
+       ALERTS / TOASTS
+       ================================================================ */
+    .alert {
+      padding: 14px 18px; border-radius: var(--radius-sm);
+      font-size: .85rem; font-weight: 500;
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 16px;
+    }
+    .alert-success { background: var(--success-bg); color: #065F46; border: 1px solid rgba(16,185,129,.2); }
+    .alert-danger { background: var(--danger-bg); color: #991B1B; border: 1px solid rgba(239,68,68,.2); }
+    .alert-info { background: var(--primary-bg); color: #1E40AF; border: 1px solid rgba(37,99,235,.15); }
+
+    #toast-container {
+      position: fixed; top: 24px; right: 24px; z-index: 9999;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .toast {
+      padding: 12px 20px; border-radius: var(--radius-sm);
+      font-size: .85rem; font-weight: 500; color: #fff;
+      box-shadow: var(--shadow-lg); animation: slideIn .3s ease;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .toast.success { background: var(--success); }
+    .toast.error { background: var(--danger); }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: none; opacity: 1; } }
+
+    /* ================================================================
+       MISC
+       ================================================================ */
+    .section-title { font-size: 1rem; font-weight: 700; margin-bottom: 20px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .mt-4 { margin-top: 16px; }
+    .text-muted { color: var(--text-secondary); }
+    .hidden { display: none !important; }
+
+    /* Mobile menu button */
+    .mobile-menu-btn {
+      display: none; background: none; border: none; color: var(--text);
+      cursor: pointer; padding: 4px;
+    }
+    .mobile-menu-btn .material-icons-round { font-size: 28px; }
+
+    /* ================================================================
+       RESPONSIVE
+       ================================================================ */
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .main { margin-left: 0; }
+      .content { padding: 20px 16px; }
+      .topbar { padding: 14px 16px; }
+      .grid-2 { grid-template-columns: 1fr; }
+      .mobile-menu-btn { display: block; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 480px) {
+      .stats-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ================================================================
+       SIDEBAR MOBILE OVERLAY
+       ================================================================ */
+    .sidebar-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.5); z-index: 99;
+    }
+    .sidebar-overlay.active { display: block; }
+
+    /* ================================================================
+       LOG TABLE IN RESULTS
+       ================================================================ */
+    .log-table { max-height: 320px; overflow-y: auto; }
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 10px; border-radius: 20px; font-size: .75rem; font-weight: 600;
+    }
+    .status-badge.ok { background: var(--success-bg); color: #065F46; }
+    .status-badge.fail { background: var(--danger-bg); color: #991B1B; }
+  </style>
+</head>
+<body>
+  <!-- ============================================================
+       SIDEBAR
+       ============================================================ -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="logo">G</div>
+      <div>
+        <h2>Goleador SMS</h2>
+        <span>Enterprise Platform</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-label">Principal</div>
+      <button class="nav-item active" data-view="dashboard">
+        <span class="material-icons-round">dashboard</span> Dashboard
+      </button>
+      <button class="nav-item" data-view="test">
+        <span class="material-icons-round">science</span> Envío de Prueba
+      </button>
+      <button class="nav-item" data-view="bulk">
+        <span class="material-icons-round">campaign</span> Envío Masivo
+      </button>
+      <div class="nav-label">Sistema</div>
+      <button class="nav-item" data-view="config">
+        <span class="material-icons-round">settings</span> Configuración
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      Goleador SMS &copy; 2026 · v2.0
+    </div>
+  </aside>
+
+  <!-- ============================================================
+       MAIN
+       ============================================================ -->
+  <main class="main">
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button class="mobile-menu-btn" id="mobileMenuBtn">
+          <span class="material-icons-round">menu</span>
+        </button>
+        <h1 id="topbarTitle">Dashboard</h1>
+      </div>
+      <div class="topbar-right">
+        <div class="semaphore" id="semaphore">
+          <div class="semaphore-dot" id="semaphoreDot"></div>
+          <span class="semaphore-label" id="semaphoreLabel">Listo</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="content">
+      <!-- ============================================================
+           VIEW: DASHBOARD
+           ============================================================ -->
+      <section class="view active" id="view-dashboard">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon blue"><span class="material-icons-round">send</span></div>
+            <div class="stat-info">
+              <h4>SMS Enviados</h4>
+              <div class="stat-value" id="stat-sent">0</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon red"><span class="material-icons-round">error_outline</span></div>
+            <div class="stat-info">
+              <h4>Fallidos</h4>
+              <div class="stat-value" id="stat-failed">0</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green"><span class="material-icons-round">check_circle</span></div>
+            <div class="stat-info">
+              <h4>Tasa de Éxito</h4>
+              <div class="stat-value" id="stat-rate">—</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon orange"><span class="material-icons-round">folder_open</span></div>
+            <div class="stat-info">
+              <h4>Campañas</h4>
+              <div class="stat-value" id="stat-campaigns">0</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>Resumen de Actividad</h3>
+          </div>
+          <div class="card-body">
+            <div class="alert alert-info">
+              <span class="material-icons-round">info</span>
+              Bienvenido a Goleador SMS. Utiliza el panel de <strong>Envío de Prueba</strong> para verificar tu conexión,
+              o el <strong>Envío Masivo</strong> para campañas con archivos Excel/CSV.
+            </div>
+            <div id="dashboardActivity" style="color:var(--text-secondary); font-size:.85rem;">
+              No hay actividad reciente. Inicia una campaña para ver los resultados aquí.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================
+           VIEW: TEST SMS
+           ============================================================ -->
+      <section class="view" id="view-test">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header"><h3>Enviar SMS de Prueba</h3></div>
+            <div class="card-body">
+              <div class="form-group">
+                <label>Número de Teléfono</label>
+                <input type="text" class="form-control" id="testPhone" placeholder="Ej: 3001234567 (sin código país)"/>
+                <p class="hint">Se añadirá automáticamente el prefijo +57 (Colombia)</p>
+              </div>
+              <div class="form-group">
+                <label>Mensaje</label>
+                <textarea class="form-control" id="testMessage" rows="5" placeholder="Escribe tu mensaje de prueba aquí..."></textarea>
+                <div class="char-counter">
+                  <div class="counter-item">
+                    <span>Caracteres:</span>
+                    <span class="counter-badge blue" id="testCharCount">0</span>
+                  </div>
+                  <div class="counter-item">
+                    <span>Segmentos SMS:</span>
+                    <span class="counter-badge orange" id="testSegments">0</span>
+                  </div>
+                  <div class="counter-item">
+                    <span>Codificación:</span>
+                    <span class="counter-badge green" id="testEncoding">GSM-7</span>
+                  </div>
+                </div>
+              </div>
+              <button class="btn btn-primary" id="btnTestSend">
+                <span class="material-icons-round">send</span> Enviar Prueba
+              </button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><h3>Resultado</h3></div>
+            <div class="card-body" id="testResult">
+              <div style="text-align:center; padding: 40px 0; color: var(--text-light);">
+                <span class="material-icons-round" style="font-size:48px; margin-bottom:8px;">sms</span>
+                <p>Envía un SMS de prueba para ver el resultado aquí.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================
+           VIEW: BULK SMS
+           ============================================================ -->
+      <section class="view" id="view-bulk">
+        <!-- STEP 1: Upload -->
+        <div class="card" id="bulkStep1">
+          <div class="card-header">
+            <h3><span class="material-icons-round" style="vertical-align:middle;margin-right:6px;font-size:20px;">cloud_upload</span>Paso 1 — Cargar Archivo</h3>
+          </div>
+          <div class="card-body">
+            <div class="upload-zone" id="uploadZone">
+              <input type="file" id="bulkFile" accept=".xlsx,.xls,.csv,.txt,.tsv"/>
+              <span class="material-icons-round">upload_file</span>
+              <h4>Arrastra tu archivo aquí o haz clic para seleccionar</h4>
+              <p>Formatos soportados: .xlsx, .xls, .csv, .txt, .tsv</p>
+            </div>
+            <div class="file-info hidden" id="fileInfo">
+              <span class="material-icons-round">description</span>
+              <span id="fileName">archivo.xlsx</span>
+              <span id="fileRows" style="color:var(--text-secondary); font-size:.8rem; margin-left:8px;"></span>
+              <button class="file-remove" id="fileRemove">Eliminar</button>
+            </div>
+            <div id="previewTable" class="hidden"></div>
+          </div>
+        </div>
+
+        <!-- STEP 2: Compose -->
+        <div class="card mt-4 hidden" id="bulkStep2">
+          <div class="card-header">
+            <h3><span class="material-icons-round" style="vertical-align:middle;margin-right:6px;font-size:20px;">edit_note</span>Paso 2 — Componer Mensaje</h3>
+          </div>
+          <div class="card-body">
+            <div class="form-group">
+              <label>Columna de Teléfono</label>
+              <select class="form-control" id="phoneColumn"></select>
+              <p class="hint">Selecciona la columna que contiene los números telefónicos.</p>
+            </div>
+
+            <div class="form-group">
+              <label>Etiquetas Disponibles</label>
+              <p class="hint" style="margin-bottom:8px;">Haz clic en una etiqueta para insertarla en el mensaje.</p>
+              <div class="tags-bar" id="tagsBar"></div>
+            </div>
+
+            <div class="form-group">
+              <label>Mensaje</label>
+              <textarea class="form-control" id="bulkMessage" rows="5"
+                placeholder="Escribe tu mensaje usando las etiquetas. Ej: Hola {nombre}, tu saldo es ${deuda}."></textarea>
+              <div class="char-counter">
+                <div class="counter-item">
+                  <span>Caracteres:</span>
+                  <span class="counter-badge blue" id="bulkCharCount">0</span>
+                </div>
+                <div class="counter-item">
+                  <span>Segmentos SMS:</span>
+                  <span class="counter-badge orange" id="bulkSegments">0</span>
+                </div>
+                <div class="counter-item">
+                  <span>Codificación:</span>
+                  <span class="counter-badge green" id="bulkEncoding">GSM-7</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:12px; align-items:center;">
+              <button class="btn btn-primary" id="btnBulkSend">
+                <span class="material-icons-round">rocket_launch</span> Iniciar Campaña
+              </button>
+              <span class="text-muted" id="bulkTotalLabel" style="font-size:.85rem;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 3: Progress -->
+        <div class="card mt-4 hidden" id="bulkStep3">
+          <div class="card-header">
+            <h3><span class="material-icons-round" style="vertical-align:middle;margin-right:6px;font-size:20px;">analytics</span>Progreso de Envío</h3>
+          </div>
+          <div class="card-body">
+            <div class="progress-section">
+              <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                <span class="text-muted" style="font-size:.85rem;" id="progressLabel">Procesando...</span>
+                <span style="font-weight:700; font-size:.9rem;" id="progressPercent">0%</span>
+              </div>
+              <div class="progress-bar-track">
+                <div class="progress-bar-fill" id="progressFill"></div>
+              </div>
+              <div class="progress-stats">
+                <div class="ps-item"><span class="dot-green"></span> Enviados: <strong id="progSent">0</strong></div>
+                <div class="ps-item"><span class="dot-red"></span> Fallidos: <strong id="progFailed">0</strong></div>
+                <div class="ps-item">Total: <strong id="progTotal">0</strong></div>
+              </div>
+            </div>
+            <div id="bulkResultSection" class="hidden" style="margin-top:20px;">
+              <div id="bulkResultAlert"></div>
+              <div class="table-wrap log-table" id="bulkLogTable" style="margin-top:12px;"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================
+           VIEW: CONFIG
+           ============================================================ -->
+      <section class="view" id="view-config">
+        <div class="card">
+          <div class="card-header"><h3>Configuración de la API</h3></div>
+          <div class="card-body">
+            <div class="grid-2">
+              <div class="form-group">
+                <label>Cuenta API</label>
+                <input type="text" class="form-control" value="cs_m9chhg" readonly style="background:#F8FAFC;"/>
+              </div>
+              <div class="form-group">
+                <label>Sender ID</label>
+                <input type="text" class="form-control" value="teddy" readonly style="background:#F8FAFC;"/>
+              </div>
+              <div class="form-group">
+                <label>Código País</label>
+                <input type="text" class="form-control" value="+57 (Colombia)" readonly style="background:#F8FAFC;"/>
+              </div>
+              <div class="form-group">
+                <label>Envíos Concurrentes</label>
+                <input type="text" class="form-control" value="3 simultáneos" readonly style="background:#F8FAFC;"/>
+              </div>
+            </div>
+            <div class="alert alert-info mt-4">
+              <span class="material-icons-round">lock</span>
+              Las credenciales de la API están configuradas del lado del servidor. Contacta al administrador para modificarlas.
+            </div>
+          </div>
+        </div>
+
+        <div class="card mt-4">
+          <div class="card-header"><h3>Límites de Caracteres por SMS</h3></div>
+          <div class="card-body">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Codificación</th><th>1 Segmento (máx.)</th><th>Múltiples Segmentos (por parte)</th><th>Caracteres Soportados</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td><strong>GSM-7</strong></td><td>160 caracteres</td><td>153 caracteres</td><td>Letras latinas, números, símbolos básicos</td></tr>
+                  <tr><td><strong>Unicode (UCS-2)</strong></td><td>70 caracteres</td><td>67 caracteres</td><td>Todos los idiomas, emojis, caracteres especiales</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div><!-- /content -->
+  </main>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toast-container"></div>
+
+  <!-- ============================================================
+       JAVASCRIPT
+       ============================================================ -->
+  <script>
+    // ===== STATE =====
+    let currentPreviewId = null;
+    let currentColumns = [];
+    let currentTotalRows = 0;
+
+    // ===== NAVIGATION =====
+    const navItems = document.querySelectorAll('.nav-item[data-view]');
+    const views = document.querySelectorAll('.view');
+    const topbarTitle = document.getElementById('topbarTitle');
+    const titles = { dashboard: 'Dashboard', test: 'Envío de Prueba', bulk: 'Envío Masivo', config: 'Configuración' };
+
+    navItems.forEach(item => {
+      item.addEventListener('click', () => {
+        const view = item.dataset.view;
+        navItems.forEach(n => n.classList.remove('active'));
+        item.classList.add('active');
+        views.forEach(v => v.classList.remove('active'));
+        document.getElementById('view-' + view).classList.add('active');
+        topbarTitle.textContent = titles[view] || 'Dashboard';
+        // Close mobile sidebar
+        document.getElementById('sidebar').classList.remove('open');
+        document.getElementById('sidebarOverlay').classList.remove('active');
+      });
+    });
+
+    // Mobile menu
+    document.getElementById('mobileMenuBtn').addEventListener('click', () => {
+      document.getElementById('sidebar').classList.toggle('open');
+      document.getElementById('sidebarOverlay').classList.toggle('active');
+    });
+    document.getElementById('sidebarOverlay').addEventListener('click', () => {
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('sidebarOverlay').classList.remove('active');
+    });
+
+    // ===== TOAST =====
+    function toast(msg, type = 'success') {
+      const el = document.createElement('div');
+      el.className = 'toast ' + type;
+      el.innerHTML = `<span class="material-icons-round" style="font-size:18px;">${type === 'success' ? 'check_circle' : 'error'}</span> ${msg}`;
+      document.getElementById('toast-container').appendChild(el);
+      setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 4000);
+    }
+
+    // ===== SEMAPHORE =====
+    const semDot = document.getElementById('semaphoreDot');
+    const semLabel = document.getElementById('semaphoreLabel');
+    function setSemaphore(state) {
+      semDot.className = 'semaphore-dot';
+      if (state === 'ready') { semLabel.textContent = 'Listo'; }
+      else if (state === 'sending') { semDot.classList.add('yellow'); semLabel.textContent = 'Enviando'; }
+      else if (state === 'error') { semDot.classList.add('red'); semLabel.textContent = 'Error'; }
+      else if (state === 'done') { semLabel.textContent = 'Completado'; }
+    }
+
+    // ===== CHARACTER COUNTER =====
+    const GSM7 = new Set("@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞ ÆæßÉ !\"#¤%&'()*+,-./0123456789:;<=>?¡ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÑÜabcdefghijklmnopqrstuvwxyzäöñüà§");
+    const GSM7_EXT_SET = new Set("^{}\\[~]|€");
+
+    function calcSmsInfo(text) {
+      let isGsm = true;
+      for (const c of text) { if (!GSM7.has(c) && !GSM7_EXT_SET.has(c)) { isGsm = false; break; } }
+      const len = text.length;
+      if (isGsm) {
+        let extCount = 0;
+        for (const c of text) if (GSM7_EXT_SET.has(c)) extCount++;
+        const eff = len + extCount;
+        const segs = eff <= 160 ? (eff === 0 ? 0 : 1) : Math.ceil(eff / 153);
+        return { encoding: 'GSM-7', chars: len, segments: segs };
+      } else {
+        const segs = len <= 70 ? (len === 0 ? 0 : 1) : Math.ceil(len / 67);
+        return { encoding: 'Unicode', chars: len, segments: segs };
+      }
+    }
+
+    function updateCounter(textareaId, charId, segId, encId) {
+      const text = document.getElementById(textareaId).value;
+      const info = calcSmsInfo(text);
+      document.getElementById(charId).textContent = info.chars;
+      document.getElementById(segId).textContent = info.segments;
+      document.getElementById(encId).textContent = info.encoding;
+    }
+
+    document.getElementById('testMessage').addEventListener('input', () => updateCounter('testMessage', 'testCharCount', 'testSegments', 'testEncoding'));
+    document.getElementById('bulkMessage').addEventListener('input', () => updateCounter('bulkMessage', 'bulkCharCount', 'bulkSegments', 'bulkEncoding'));
+
+    // ===== DASHBOARD STATS =====
+    async function loadStats() {
+      try {
+        const res = await fetch('/api/stats');
+        const data = await res.json();
+        document.getElementById('stat-sent').textContent = data.total_sent.toLocaleString();
+        document.getElementById('stat-failed').textContent = data.total_failed.toLocaleString();
+        document.getElementById('stat-campaigns').textContent = data.total_campaigns.toLocaleString();
+        const total = data.total_sent + data.total_failed;
+        document.getElementById('stat-rate').textContent = total > 0
+          ? ((data.total_sent / total) * 100).toFixed(1) + '%'
+          : '—';
+      } catch(e) { console.error('Stats load error', e); }
+    }
+    loadStats();
+    setInterval(loadStats, 10000);
+
+    // ===== TEST SMS =====
+    document.getElementById('btnTestSend').addEventListener('click', async () => {
+      const phone = document.getElementById('testPhone').value.trim();
+      const message = document.getElementById('testMessage').value.trim();
+      if (!phone || !message) { toast('Completa teléfono y mensaje.', 'error'); return; }
+
+      const btn = document.getElementById('btnTestSend');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="material-icons-round">hourglass_top</span> Enviando...';
+      setSemaphore('sending');
+
+      try {
+        const res = await fetch('/api/test-sms', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone, message })
+        });
+        const data = await res.json();
+        const resultDiv = document.getElementById('testResult');
+        if (data.ok) {
+          resultDiv.innerHTML = `
+            <div class="alert alert-success">
+              <span class="material-icons-round">check_circle</span>
+              SMS enviado exitosamente a +57${phone}
+            </div>
+            <p style="font-size:.85rem;color:var(--text-secondary);">Detalle: ${data.detail}</p>`;
+          toast('SMS de prueba enviado');
+          setSemaphore('done');
+        } else {
+          resultDiv.innerHTML = `
+            <div class="alert alert-danger">
+              <span class="material-icons-round">error</span>
+              Error al enviar: ${data.detail || data.error}
+            </div>`;
+          toast('Error al enviar SMS', 'error');
+          setSemaphore('error');
+        }
+        loadStats();
+      } catch(e) {
+        toast('Error de conexión', 'error');
+        setSemaphore('error');
+      }
+      btn.disabled = false;
+      btn.innerHTML = '<span class="material-icons-round">send</span> Enviar Prueba';
+      setTimeout(() => setSemaphore('ready'), 3000);
+    });
+
+    // ===== FILE UPLOAD =====
+    const uploadZone = document.getElementById('uploadZone');
+    const bulkFile = document.getElementById('bulkFile');
+    const fileInfo = document.getElementById('fileInfo');
+
+    uploadZone.addEventListener('click', () => bulkFile.click());
+    uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+    uploadZone.addEventListener('drop', e => {
+      e.preventDefault();
+      uploadZone.classList.remove('dragover');
+      if (e.dataTransfer.files.length) {
+        bulkFile.files = e.dataTransfer.files;
+        handleFileUpload(e.dataTransfer.files[0]);
+      }
+    });
+    bulkFile.addEventListener('change', () => { if (bulkFile.files.length) handleFileUpload(bulkFile.files[0]); });
+
+    document.getElementById('fileRemove').addEventListener('click', () => {
+      currentPreviewId = null;
+      currentColumns = [];
+      fileInfo.classList.add('hidden');
+      uploadZone.classList.remove('hidden');
+      document.getElementById('previewTable').classList.add('hidden');
+      document.getElementById('bulkStep2').classList.add('hidden');
+    });
+
+    async function handleFileUpload(file) {
+      const fd = new FormData();
+      fd.append('file', file);
+      uploadZone.classList.add('hidden');
+      fileInfo.classList.remove('hidden');
+      document.getElementById('fileName').textContent = file.name;
+      document.getElementById('fileRows').textContent = 'Cargando...';
+
+      try {
+        const res = await fetch('/api/upload-preview', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (!data.ok) { toast(data.error, 'error'); resetUpload(); return; }
+
+        currentPreviewId = data.preview_id;
+        currentColumns = data.columns;
+        currentTotalRows = data.total_rows;
+        document.getElementById('fileRows').textContent = `${data.total_rows} registros`;
+
+        // Render preview table
+        const previewDiv = document.getElementById('previewTable');
+        let html = '<div class="table-wrap"><table><thead><tr>';
+        data.columns.forEach(c => { html += `<th>${esc(c)}</th>`; });
+        html += '</tr></thead><tbody>';
+        data.preview.forEach(row => {
+          html += '<tr>';
+          data.columns.forEach(c => { html += `<td>${esc(row[c] || '')}</td>`; });
+          html += '</tr>';
+        });
+        html += '</tbody></table></div>';
+        if (data.total_rows > 5) html += `<p class="text-muted" style="font-size:.78rem;margin-top:6px;">Mostrando 5 de ${data.total_rows} registros</p>`;
+        previewDiv.innerHTML = html;
+        previewDiv.classList.remove('hidden');
+
+        // Show step 2
+        setupStep2(data.columns, data.total_rows);
+      } catch(e) {
+        toast('Error al cargar archivo', 'error');
+        resetUpload();
+      }
+    }
+
+    function resetUpload() {
+      fileInfo.classList.add('hidden');
+      uploadZone.classList.remove('hidden');
+      document.getElementById('previewTable').classList.add('hidden');
+    }
+
+    function setupStep2(columns, totalRows) {
+      const step2 = document.getElementById('bulkStep2');
+      step2.classList.remove('hidden');
+
+      // Phone column select
+      const phoneSelect = document.getElementById('phoneColumn');
+      phoneSelect.innerHTML = '<option value="">— Seleccionar —</option>';
+      columns.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c; opt.textContent = c;
+        // Auto-select columns that look like phone numbers
+        if (/num|tel|phone|celular|movil/i.test(c)) opt.selected = true;
+        phoneSelect.appendChild(opt);
+      });
+
+      // Tags
+      const tagsBar = document.getElementById('tagsBar');
+      tagsBar.innerHTML = '';
+      columns.forEach(c => {
+        const tag = document.createElement('span');
+        tag.className = 'tag';
+        tag.textContent = `{${c}}`;
+        tag.addEventListener('click', () => {
+          const ta = document.getElementById('bulkMessage');
+          const start = ta.selectionStart;
+          const end = ta.selectionEnd;
+          const text = ta.value;
+          ta.value = text.substring(0, start) + `{${c}}` + text.substring(end);
+          ta.focus();
+          ta.selectionStart = ta.selectionEnd = start + c.length + 2;
+          updateCounter('bulkMessage', 'bulkCharCount', 'bulkSegments', 'bulkEncoding');
+        });
+        tagsBar.appendChild(tag);
+      });
+
+      document.getElementById('bulkTotalLabel').textContent = `Se enviarán ${totalRows} mensajes`;
+    }
+
+    // ===== BULK SEND =====
+    document.getElementById('btnBulkSend').addEventListener('click', async () => {
+      const phoneCol = document.getElementById('phoneColumn').value;
+      const message = document.getElementById('bulkMessage').value.trim();
+      if (!currentPreviewId) { toast('Carga un archivo primero.', 'error'); return; }
+      if (!phoneCol) { toast('Selecciona la columna de teléfono.', 'error'); return; }
+      if (!message) { toast('Escribe un mensaje.', 'error'); return; }
+
+      const btn = document.getElementById('btnBulkSend');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="material-icons-round">hourglass_top</span> Iniciando...';
+      setSemaphore('sending');
+
+      // Show progress section
+      const step3 = document.getElementById('bulkStep3');
+      step3.classList.remove('hidden');
+      document.getElementById('bulkResultSection').classList.add('hidden');
+      document.getElementById('progressFill').style.width = '0%';
+      document.getElementById('progressPercent').textContent = '0%';
+      document.getElementById('progSent').textContent = '0';
+      document.getElementById('progFailed').textContent = '0';
+      document.getElementById('progTotal').textContent = currentTotalRows;
+      document.getElementById('progressLabel').textContent = 'Iniciando campaña...';
+
+      try {
+        const res = await fetch('/api/enviar-bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ preview_id: currentPreviewId, message, phone_column: phoneCol })
+        });
+        const data = await res.json();
+        if (!data.ok) {
+          toast(data.error, 'error');
+          btn.disabled = false;
+          btn.innerHTML = '<span class="material-icons-round">rocket_launch</span> Iniciar Campaña';
+          setSemaphore('error');
+          return;
+        }
+
+        // SSE progress
+        const evtSource = new EventSource('/api/progress/' + data.task_id);
+        evtSource.onmessage = (event) => {
+          const d = JSON.parse(event.data);
+          if (d.error) { evtSource.close(); return; }
+
+          const processed = d.processed;
+          const pct = d.total > 0 ? Math.round((processed / d.total) * 100) : 0;
+          document.getElementById('progressFill').style.width = pct + '%';
+          document.getElementById('progressPercent').textContent = pct + '%';
+          document.getElementById('progSent').textContent = d.sent;
+          document.getElementById('progFailed').textContent = d.failed;
+          document.getElementById('progressLabel').textContent = `Procesando ${processed} de ${d.total}...`;
+
+          if (d.status === 'done') {
+            evtSource.close();
+            document.getElementById('progressLabel').textContent = 'Campaña finalizada';
+            setSemaphore('done');
+            btn.disabled = false;
+            btn.innerHTML = '<span class="material-icons-round">rocket_launch</span> Iniciar Campaña';
+
+            // Show results
+            const resultSection = document.getElementById('bulkResultSection');
+            resultSection.classList.remove('hidden');
+            const alertType = d.failed === 0 ? 'alert-success' : (d.sent === 0 ? 'alert-danger' : 'alert-info');
+            const alertIcon = d.failed === 0 ? 'check_circle' : (d.sent === 0 ? 'error' : 'info');
+            document.getElementById('bulkResultAlert').innerHTML = `
+              <div class="alert ${alertType}">
+                <span class="material-icons-round">${alertIcon}</span>
+                Campaña finalizada: <strong>${d.sent}</strong> enviados, <strong>${d.failed}</strong> fallidos de <strong>${d.total}</strong> total.
+              </div>`;
+
+            // Load log
+            loadTaskLog(data.task_id);
+            loadStats();
+            toast(`Campaña completada: ${d.sent}/${d.total} enviados`);
+            setTimeout(() => setSemaphore('ready'), 5000);
+          }
+        };
+        evtSource.onerror = () => {
+          evtSource.close();
+          setSemaphore('error');
+          btn.disabled = false;
+          btn.innerHTML = '<span class="material-icons-round">rocket_launch</span> Iniciar Campaña';
+        };
+      } catch(e) {
+        toast('Error al iniciar campaña', 'error');
+        setSemaphore('error');
+        btn.disabled = false;
+        btn.innerHTML = '<span class="material-icons-round">rocket_launch</span> Iniciar Campaña';
+      }
+    });
+
+    async function loadTaskLog(taskId) {
+      try {
+        const res = await fetch('/api/task-log/' + taskId);
+        const data = await res.json();
+        if (!data.ok) return;
+
+        let html = '<table><thead><tr><th>Teléfono</th><th>Estado</th><th>Detalle</th></tr></thead><tbody>';
+        data.log.forEach(entry => {
+          const badge = entry.ok
+            ? '<span class="status-badge ok">Enviado</span>'
+            : '<span class="status-badge fail">Fallido</span>';
+          html += `<tr><td>+57${esc(entry.phone)}</td><td>${badge}</td><td>${esc(entry.detail)}</td></tr>`;
+        });
+        html += '</tbody></table>';
+        document.getElementById('bulkLogTable').innerHTML = html;
+      } catch(e) { console.error(e); }
+    }
+
+    // ===== UTILS =====
+    function esc(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>
